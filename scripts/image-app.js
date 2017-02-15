@@ -6,6 +6,13 @@
   var canvas = document.querySelector('#image');
   var ctx = canvas.getContext('2d');
 
+  //add my worker
+  var myWorker;
+  if (window.Worker) {
+    myWorker = new Worker('./scripts/worker.js');
+  } ;
+  //my worker definition done
+
   function handleImage(e){
     var reader = new FileReader();
     reader.onload = function(event){
@@ -40,21 +47,25 @@
 
     toggleButtonsAbledness();
 
+  	myWorker.postMessage({
+        "type":"invert",
+        "imageData": imageData
+  	});
+
     // Hint! This is where you should post messages to the web worker and
     // receive messages from the web worker.
+    myWorker.onmessage = function(e){
+    	
+    	var imageData = e.data;
+    	if (imageData) {
+    		ctx.putImageData(imageData, 0, 0);
+    	} 
+    };
 
-    length = imageData.data.length / 4;
-    for (i = j = 0, ref = length; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
-      r = imageData.data[i * 4 + 0];
-      g = imageData.data[i * 4 + 1];
-      b = imageData.data[i * 4 + 2];
-      a = imageData.data[i * 4 + 3];
-      pixel = manipulate(type, r, g, b, a);
-      imageData.data[i * 4 + 0] = pixel[0];
-      imageData.data[i * 4 + 1] = pixel[1];
-      imageData.data[i * 4 + 2] = pixel[2];
-      imageData.data[i * 4 + 3] = pixel[3];
-    }
+    myWorker.onerror = function(){
+    	throw "Worker Exception";
+    };
+
     toggleButtonsAbledness();
     return ctx.putImageData(imageData, 0, 0);
   };
@@ -64,16 +75,20 @@
   }
 
   document.querySelector('#invert').onclick = function() {
-    manipulateImage("invert");
+  	  //post message to my worker
+  	  manipulateImage("invert");
   };
   document.querySelector('#chroma').onclick = function() {
-    manipulateImage("chroma");
+  	 //post message to my worker
+  	  manipulateImage("chroma");  
   };
   document.querySelector('#greyscale').onclick = function() {
-    manipulateImage("greyscale");
+  	 //post message to my worker
+  	 manipulateImage("greyscale");
   };
   document.querySelector('#vibrant').onclick = function() {
-    manipulateImage("vibrant");
+  	 //post message to my worker
+  	 manipulateImage("vibrant");
   };
   document.querySelector('#revert').onclick = function() {
     revertImage();
